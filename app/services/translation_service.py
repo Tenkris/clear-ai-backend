@@ -30,7 +30,7 @@ class TranslationService:
             raise HTTPException(status_code=500, detail=f"Error initializing translation service: {str(e)}")
     
     async def translate_to_thai(self, english_json: Dict[str, Any]) -> Dict[str, Any]:
-        """Translate structured answer from English to Thai using GPT-4o.
+        """Translate all sections of the response from English to Thai using GPT-4o.
         
         Args:
             english_json: The English JSON response from LLM
@@ -42,79 +42,76 @@ class TranslationService:
             HTTPException: If there's an error during translation
         """
         try:
-            # Keep the original reasoning in English
-            result = {
-                "reasoning": english_json.get("reasoning", ""),
-                "structured_answer": {}
-            }
-            
-            # Extract the structured answer for translation
-            structured_answer = english_json.get("structured_answer", {})
-            
-            # Translate using GPT-4o with chain-of-thought
-            result["structured_answer"] = await self._translate_with_gpt4o(structured_answer)
+            # Translate the entire response to Thai
+            thai_result = await self._translate_full_response(english_json)
                 
-            return result
+            return {
+                "success": True,
+                "message": "Translation completed successfully",
+                "data": thai_result
+            }
             
         except Exception as e:
             logger.error(f"Error translating content: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error translating content: {str(e)}")
     
-    async def _translate_with_gpt4o(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Translate using OpenAI's GPT-4o model with chain-of-thought reasoning.
+    async def _translate_full_response(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Translate the complete response using OpenAI's GPT-4o model with chain-of-thought reasoning.
         
         Args:
-            data: The dictionary with English values
+            data: The complete English response
             
         Returns:
-            Dict[str, Any]: The dictionary with Thai values
+            Dict[str, Any]: The Thai translated response
         """
         try:
             # Convert the data to a JSON string
-            json_str = json.dumps(data)
+            json_str = json.dumps(data, ensure_ascii=False)
             
             # Create a system prompt with chain-of-thought instructions
             system_prompt = """
-            You are a professional translator specializing in English to Thai translation.
-            You excel at preserving meaning, cultural nuances, and contextual accuracy in technical and educational content.
+            You are a professional Thai translator specializing in educational content and technical explanations.
+            Your task is to translate an English analysis into clear, natural Thai language.
             
-            When translating, follow these steps carefully:
+            Follow these steps to produce high-quality Thai translations:
             
-            1. First understand the complete meaning of each English text
-            2. Consider the technical context and subject matter
-            3. Think about natural-sounding Thai alternatives for English phrases
-            4. Select the most accurate and contextually appropriate Thai translation
-            5. Ensure the translation follows Thai grammar rules and conventions
-            6. Verify that technical terms and educational concepts are translated correctly
-            7. Maintain the step-by-step structure and sequential nature of the content
+            1. Read and understand the complete English text in each section
+            2. Think about how to express each concept naturally in Thai
+            3. Consider Thai educational terminology and problem-solving vocabulary
+            4. Translate step-by-step, maintaining the logical flow and clarity
+            5. Ensure your Thai translations sound natural and are easy to understand
+            6. Verify technical accuracy and educational value are preserved
             
-            Your primary goal is producing high-quality, accurate Thai translations 
-            while maintaining the original meaning, structure, and educational value.
+            The input will have three important sections:
+            1. "question_understanding" - Translate this comprehensively while maintaining all details
+            2. "solving_strategy" - Translate the complete strategy and reasoning
+            3. "solution_steps" - Translate each step precisely, maintaining the step-by-step format
+            
+            Your output must maintain the exact same JSON structure but with Thai content.
             """
             
             # Create a user prompt for the translation with chain-of-thought instructions
             user_prompt = f"""
-            Translate the following solution steps from English to Thai using chain-of-thought reasoning.
+            Translate this English analysis into clear, natural Thai language.
             
-            This is a structured educational solution that needs careful translation:
+            Apply chain-of-thought reasoning to create high-quality Thai translations:
+            1. First, understand the complete meaning of the English text
+            2. Think about the most natural Thai expressions for each concept
+            3. Ensure educational clarity and technical accuracy
+            4. Preserve the step-by-step nature of explanations
             
-            For each solution step:
-            1. Understand the complete technical meaning and context
-            2. Consider the most precise Thai terminology for technical concepts
-            3. Ensure the logical flow between steps is preserved
-            4. Choose the most natural and accurate Thai translation
-            
-            IMPORTANT:
-            - Translate ONLY the string values, keep the keys and structure exactly the same
-            - Maintain the same JSON format
-            - Preserve the step numbering and sequential nature of the solution
-            - Ensure technical terms and educational concepts are translated accurately
-            - Make sure the solution remains clear and easy to follow in Thai
+            IMPORTANT RULES:
+            - Translate all text to Thai language
+            - Keep the exact same JSON structure and field names
+            - For "solution_steps", maintain the array format with each step translated to Thai
+            - Keep "Step 1:", "Step 2:", etc. at the beginning of each step
+            - Make the Thai text clear, natural, and educational
+            - Ensure the Thai explanation is complete and detailed
             
             JSON to translate:
             {json_str}
             
-            Return ONLY the valid JSON with Thai translations.
+            Return ONLY valid JSON with Thai translations.
             """
             
             # Send the request to OpenAI using GPT-4o

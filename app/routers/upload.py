@@ -31,7 +31,7 @@ async def upload_image(
     Process an uploaded Thai image:
     1. Prepare image for LLM processing
     2. Send image directly to LLM to get English reasoning and structured answer
-    3. Translate structured answer to Thai
+    3. Translate to Thai with 3 sections: question understanding, solving strategy, and step-by-step solution
     4. Return final result
     
     Args:
@@ -40,7 +40,7 @@ async def upload_image(
         translation_service: Service for translation
         
     Returns:
-        Dict[str, Any]: The response containing the processed data
+        Dict[str, Any]: The response containing the processed data with Thai translations
     """
     try:
         # Step 1: Prepare image for LLM
@@ -48,22 +48,18 @@ async def upload_image(
         base64_image = await image_service.prepare_image_for_llm(file)
         logger.info(f"Image prepared for LLM processing: {file.filename}")
         
-        # Step 2: Process image with LLM to get English reasoning and structured answer
+        # Step 2: Process image with LLM to get English analysis
         logger.info("Processing image with LLM")
         english_result = await llm_service.process_thai_image(base64_image)
         logger.info("LLM processing complete")
         
-        # Step 3: Translate structured answer from English to Thai
-        logger.info("Translating structured answer to Thai")
+        # Step 3: Translate the complete analysis to Thai
+        logger.info("Translating analysis to Thai")
         thai_result = await translation_service.translate_to_thai(english_result)
         logger.info("Translation complete")
         
         # Step 4: Return the final result
-        return {
-            "success": True,
-            "message": "Image processed successfully",
-            "data": thai_result
-        }
+        return thai_result
         
     except Exception as e:
         logger.error(f"Error processing image: {str(e)}")

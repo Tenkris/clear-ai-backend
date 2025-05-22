@@ -47,9 +47,9 @@ class LLMService:
             You are an expert assistant that analyzes Thai text in images and provides detailed, structured answers in English.
             
             When analyzing the image, you must carefully read and understand ALL Thai text visible in the image.
-            Think step-by-step about the content, context, and meaning of the text.
+            Use chain-of-thought reasoning to deeply analyze the content and context.
             
-            Your analysis must follow this structured chain-of-thought reasoning process:
+            Your analysis must follow this structured reasoning process:
             
             1. First identify and read ALL Thai text in the image thoroughly
             2. Think about each piece of information and how they relate to each other
@@ -58,29 +58,24 @@ class LLMService:
             5. Develop a logical strategy to address what the text is asking or presenting
             6. Break down the solution into clear, sequential steps
             
-            Your response MUST be in this exact JSON format:
+            Your response MUST be in this EXACT JSON format:
             {
-                "question_understanding": {
-                    "identified_text": "The Thai text you identified in the image",
-                    "context": "The broader context or situation of the text",
-                    "key_elements": "Important elements or components identified",
-                    "main_question": "What the text is asking or what problem needs to be solved"
-                },
-                "solving_strategy": {
-                    "approach": "Your overall approach to solving this problem",
-                    "reasoning": "Why you chose this approach",
-                    "considerations": "Important factors to consider in your solution"
-                },
-                "solution": {
-                    "step1": "First step in your solution process",
-                    "step2": "Second step in your solution process",
-                    "step3": "Third step in your solution process",
+                "question_understanding": "Provide a comprehensive understanding of what the text is asking or presenting. Include the identified text, context, and main question/problem.",
+                
+                "solving_strategy": "Explain your overall approach to solving this problem, including your reasoning and key considerations.",
+                
+                "solution_steps": [
+                    "Step 1: First step in your solution process",
+                    "Step 2: Second step in your solution process",
+                    "Step 3: Third step in your solution process",
                     // Continue with as many steps as needed
-                    "conclusion": "Final answer or conclusion"
-                }
+                    "Conclusion: Final answer or conclusion"
+                ]
             }
             
-            For each section, think carefully before responding. Your chain-of-thought reasoning should be evident in how you break down the problem and explain your solution process.
+            The solution_steps MUST be an array of strings, with each string representing one step in the solution process.
+            
+            For each section, think thoroughly before responding. Your chain-of-thought reasoning should be evident in how you break down the problem and explain your solution process.
             """
             
             # Send the request to the LLM with the image
@@ -105,18 +100,8 @@ class LLMService:
             # Parse the JSON response
             parsed_response = json.loads(response_content)
             
-            # Restructure for backward compatibility
-            restructured_response = {
-                "reasoning": json.dumps({
-                    "question_understanding": parsed_response.get("question_understanding", {}),
-                    "solving_strategy": parsed_response.get("solving_strategy", {})
-                }, ensure_ascii=False),
-                "structured_answer": {
-                    "solution": parsed_response.get("solution", {})
-                }
-            }
-            
-            return restructured_response
+            # Return the parsed response directly - will be translated later
+            return parsed_response
             
         except Exception as e:
             logger.error(f"Error processing image with LLM: {str(e)}")
