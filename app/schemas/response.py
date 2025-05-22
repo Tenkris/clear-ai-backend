@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from pydantic import BaseModel
 
 
@@ -11,4 +11,11 @@ class ResponseModel(BaseModel):
 
 class ImageProcessingResponse(ResponseModel):
     """Response model for image processing."""
-    data: Dict[str, Any] 
+    data: Dict[str, Any]
+    
+
+class SolutionResponse(BaseModel):
+    """Model for the solution structure."""
+    question_understanding: str
+    solving_strategy: str
+    solution_steps: List[str] 

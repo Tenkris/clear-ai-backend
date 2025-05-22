@@ -44,10 +44,10 @@ class LLMService:
         try:
             # Create a system message that instructs the model to use chain-of-thought reasoning
             system_message = """
-            You are an expert assistant that analyzes Thai text in images and provides detailed, structured answers in English.
+            You are an expert assistant that analyzes Thai text in images and provides detailed, structured answers in clear, concise English.
             
             When analyzing the image, you must carefully read and understand ALL Thai text visible in the image.
-            Use chain-of-thought reasoning to deeply analyze the content and context.
+            Apply systematic chain-of-thought reasoning to thoroughly analyze the content and context.
             
             Your analysis must follow this structured reasoning process:
             
@@ -60,33 +60,40 @@ class LLMService:
             
             Your response MUST be in this EXACT JSON format:
             {
-                "question_understanding": "Provide a comprehensive understanding of what the text is asking or presenting. Include the identified text, context, and main question/problem.",
+                "question_understanding": "Provide a concise yet comprehensive understanding of what the text is asking or presenting. Include key context and the main question/problem.",
                 
-                "solving_strategy": "Explain your overall approach to solving this problem, including your reasoning and key considerations.",
+                "solving_strategy": "Explain your approach to solving this problem in clear, logical steps, including your reasoning and key considerations.",
                 
                 "solution_steps": [
-                    "Step 1: First step in your solution process",
-                    "Step 2: Second step in your solution process",
-                    "Step 3: Third step in your solution process",
+                    "Step 1: First step in your solution process with clear reasoning",
+                    "Step 2: Second step explained clearly and directly",
+                    "Step 3: Third step with continued work",
                     // Continue with as many steps as needed
-                    "Conclusion: Final answer or conclusion"
+                    "Conclusion: Final answer or conclusion stated clearly"
                 ]
             }
             
-            The solution_steps MUST be an array of strings, with each string representing one step in the solution process.
+            IMPORTANT GUIDELINES:
+            - The solution_steps MUST be an array of strings, with each step clearly numbered
+            - Write in clear, direct English using simple language where possible
+            - Keep explanations concise while maintaining completeness
+            - For math problems, show calculations explicitly and verify your answers
+            - For text analysis, provide logical reasoning for your interpretations
+            - If the problem has multiple valid approaches, choose the most straightforward one
             
-            For each section, think thoroughly before responding. Your chain-of-thought reasoning should be evident in how you break down the problem and explain your solution process.
+            Your response should be structured for clarity and ease of understanding, with careful attention to accuracy.
             """
             
             # Send the request to the LLM with the image
             response = self.client.chat.completions.create(
                 model="gpt-4o",  # Use GPT-4o which has vision capabilities
+                temperature=0.2,  # Lower temperature for more deterministic/accurate responses
                 messages=[
                     {"role": "system", "content": system_message},
                     {
                         "role": "user", 
                         "content": [
-                            {"type": "text", "text": "Analyze this Thai text image. Apply chain-of-thought reasoning and respond with the structured format."},
+                            {"type": "text", "text": "Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
                         ]
                     }
@@ -100,9 +107,31 @@ class LLMService:
             # Parse the JSON response
             parsed_response = json.loads(response_content)
             
-            # Return the parsed response directly - will be translated later
+            # Validate the response format
+            self._validate_response_structure(parsed_response)
+            
+            # Return the parsed response directly
             return parsed_response
             
         except Exception as e:
             logger.error(f"Error processing image with LLM: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Error processing image with LLM: {str(e)}") 
+            raise HTTPException(status_code=500, detail=f"Error processing image with LLM: {str(e)}")
+    
+    def _validate_response_structure(self, response: Dict[str, Any]) -> None:
+        """Validate that the response has the required structure.
+        
+        Args:
+            response: The parsed LLM response
+            
+        Raises:
+            ValueError: If the response doesn't have the required structure
+        """
+        required_keys = ["question_understanding", "solving_strategy", "solution_steps"]
+        
+        for key in required_keys:
+            if key not in response:
+                raise ValueError(f"LLM response is missing required field: {key}")
+        
+        # Ensure solution_steps is a list
+        if not isinstance(response["solution_steps"], list) or len(response["solution_steps"]) == 0:
+            raise ValueError("solution_steps must be a non-empty list") 
