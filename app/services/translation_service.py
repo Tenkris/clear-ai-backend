@@ -76,34 +76,40 @@ class TranslationService:
             # Create a system prompt with chain-of-thought instructions
             system_prompt = """
             You are a professional translator specializing in English to Thai translation.
-            You excel at preserving meaning, cultural nuances, and contextual accuracy.
-            When translating, follow these steps:
+            You excel at preserving meaning, cultural nuances, and contextual accuracy in technical and educational content.
+            
+            When translating, follow these steps carefully:
             
             1. First understand the complete meaning of each English text
-            2. Consider cultural context and nuances specific to Thai language
+            2. Consider the technical context and subject matter
             3. Think about natural-sounding Thai alternatives for English phrases
             4. Select the most accurate and contextually appropriate Thai translation
             5. Ensure the translation follows Thai grammar rules and conventions
-            6. Verify that technical terms are translated correctly
+            6. Verify that technical terms and educational concepts are translated correctly
+            7. Maintain the step-by-step structure and sequential nature of the content
             
             Your primary goal is producing high-quality, accurate Thai translations 
-            while maintaining the original meaning and tone.
+            while maintaining the original meaning, structure, and educational value.
             """
             
             # Create a user prompt for the translation with chain-of-thought instructions
             user_prompt = f"""
-            Translate the following JSON from English to Thai using chain-of-thought reasoning.
+            Translate the following solution steps from English to Thai using chain-of-thought reasoning.
             
-            For each value that needs translation:
-            1. Understand the meaning and context
-            2. Consider various ways to express it in Thai
-            3. Choose the most natural and accurate Thai translation
+            This is a structured educational solution that needs careful translation:
+            
+            For each solution step:
+            1. Understand the complete technical meaning and context
+            2. Consider the most precise Thai terminology for technical concepts
+            3. Ensure the logical flow between steps is preserved
+            4. Choose the most natural and accurate Thai translation
             
             IMPORTANT:
             - Translate ONLY the string values, keep the keys and structure exactly the same
             - Maintain the same JSON format
-            - Preserve numbers, dates, and any special formatting
-            - Ensure technical terms are translated correctly
+            - Preserve the step numbering and sequential nature of the solution
+            - Ensure technical terms and educational concepts are translated accurately
+            - Make sure the solution remains clear and easy to follow in Thai
             
             JSON to translate:
             {json_str}
