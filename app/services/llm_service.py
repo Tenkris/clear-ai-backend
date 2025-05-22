@@ -81,6 +81,19 @@ class LLMService:
             - For text analysis, provide logical reasoning for your interpretations
             - If the problem has multiple valid approaches, choose the most straightforward one
             
+            MATHEMATICAL EXPRESSION FORMATTING:
+            - For ALL mathematical expressions, equations, formulas, and symbols, use LaTeX syntax enclosed in dollar signs
+            - Examples:
+              * For inline expressions: $x^2 + 3x - 2 = 0$
+              * For fractions: $\\frac{a}{b}$
+              * For integrals: $\\int_{a}^{b} f(x) dx$
+              * For square roots: $\\sqrt{x}$
+              * For subscripts: $a_1, a_2, a_3$
+              * For superscripts: $x^n$
+            - Always use proper LaTeX syntax for mathematical symbols: $\\pi$, $\\theta$, $\\sum$, $\\prod$, etc.
+            - For systems of equations or multi-line expressions, use proper LaTeX line breaks
+            - Always include LaTeX formatting even for simple expressions like $5 + 3 = 8$ or $x = 2$
+            
             Your response should be structured for clarity and ease of understanding, with careful attention to accuracy.
             """
             
@@ -93,7 +106,7 @@ class LLMService:
                     {
                         "role": "user", 
                         "content": [
-                            {"type": "text", "text": "Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English."},
+                            {"type": "text", "text": "Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English. Use LaTeX for all mathematical expressions."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
                         ]
                     }

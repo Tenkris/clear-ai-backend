@@ -87,6 +87,13 @@ class TranslationService:
             2. "solving_strategy" - Translate the complete strategy and reasoning
             3. "solution_steps" - Translate each step precisely, maintaining the step-by-step format
             
+            CRUCIAL INSTRUCTION FOR MATHEMATICAL CONTENT:
+            - DO NOT translate any mathematical expressions enclosed in dollar signs ($...$)
+            - LaTeX expressions like $\\frac{a}{b}$, $\\sqrt{x}$, or $x^2 + 3x - 2 = 0$ must be preserved exactly as they appear
+            - Only translate the explanatory text around the LaTeX expressions
+            - If you see expressions like $\\pi$, $\\theta$, $\\sum$, etc., keep them unchanged
+            - The dollar signs and everything between them must remain in the original form
+            
             Your output must maintain the exact same JSON structure but with Thai content.
             """
             
@@ -101,7 +108,8 @@ class TranslationService:
             4. Preserve the step-by-step nature of explanations
             
             IMPORTANT RULES:
-            - Translate all text to Thai language
+            - Translate all text to Thai language EXCEPT mathematical expressions in LaTeX
+            - DO NOT translate anything within dollar signs ($...$) - keep all LaTeX expressions unchanged
             - Keep the exact same JSON structure and field names
             - For "solution_steps", maintain the array format with each step translated to Thai
             - Keep "Step 1:", "Step 2:", etc. at the beginning of each step
