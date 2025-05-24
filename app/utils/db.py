@@ -3,7 +3,7 @@ from app.utils.config import Config
 from botocore.session import Session
 from pynamodb.models import Model
 from pynamodb.connection.base import Connection
-
+from app.models.question import QuestionModel
 
 def patch_connection_session(profile=None):
     @property
@@ -23,3 +23,4 @@ def create_table_if_not_exists(model : Model):
 def init_db():
     patch_connection_session(Config.DB_PROFILE)
     create_table_if_not_exists(UserModel)
+    create_table_if_not_exists(QuestionModel)

@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from app.routers import upload , auth
+from app.routers import upload, question
 
 app = FastAPI(
     title="ClearAI Backend",
@@ -27,8 +27,8 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(upload.router, prefix="/api/v1/upload", tags=["Upload"])
+app.include_router(question.router , prefix="/api/v1/question", tags=["Question"])
 init_db()
 @app.get("/")
 async def root():
