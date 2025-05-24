@@ -12,6 +12,7 @@ class ResponseModel(BaseModel):
 class ImageProcessingResponse(ResponseModel):
     """Response model for image processing."""
     data: Dict[str, Any]
+    s3_url: str
     
 
 class SolutionResponse(BaseModel):
