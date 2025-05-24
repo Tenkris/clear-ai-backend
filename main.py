@@ -1,5 +1,6 @@
 import os
 from dotenv import load_dotenv
+from app.utils.db import init_db
 
 # Load environment variables from .env file
 load_dotenv()
@@ -7,7 +8,8 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import upload
+
+from app.routers import upload , auth
 
 app = FastAPI(
     title="ClearAI Backend",
@@ -25,8 +27,9 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(upload.router)
-
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(upload.router, prefix="/api/v1/upload", tags=["Upload"])
+init_db()
 @app.get("/")
 async def root():
     return {"message": "Welcome to ClearAI Backend"}

@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import logging
 from typing import Dict, Any, Optional
 import time
+from app.middleware.auth import verify_token
 
 from app.services.image_service import ImageService
 from app.services.llm_service import LLMService
@@ -13,16 +14,12 @@ from app.schemas.response import ImageProcessingResponse
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(
-    prefix="/api",
-    tags=["upload"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 # Initialize services
 image_service = ImageService()
 
-@router.post("/upload", response_model=ImageProcessingResponse)
+@router.post("/upload", response_model=ImageProcessingResponse ,   )
 async def upload_image(
     file: UploadFile = File(...),
     language: Optional[str] = Query("thai", description="Response language: 'english' for faster response or 'thai' for Thai translation"),
