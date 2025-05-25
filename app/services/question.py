@@ -339,7 +339,7 @@ Keep explanations concise but comprehensive."""
             if question.conversations:
                 conversation_context = "\n".join(question.conversations[-10:])  # Last 10 messages for context
             
-            # Create prompt for GPT-4o-mini
+            # Create prompt for GPT-4o-mini with LaTeX formatting
             system_prompt = """You are a concise educational assistant that answers questions about mathematical problem solutions.
             
             IMPORTANT RULES:
@@ -348,7 +348,20 @@ Keep explanations concise but comprehensive."""
             - NO unnecessary elaboration or filler content
             - Focus only on what directly answers the user's question
             - Use simple, clear language
-            - Get to the point immediately"""
+            - Get to the point immediately
+            
+            MATHEMATICAL EXPRESSION FORMATTING:
+            - For ALL mathematical expressions, equations, formulas, and symbols, use LaTeX syntax enclosed in dollar signs
+            - Examples:
+              * For inline expressions: $x^2 + 3x - 2 = 0$
+              * For fractions: $\\frac{a}{b}$
+              * For integrals: $\\int_{a}^{b} f(x) dx$
+              * For square roots: $\\sqrt{x}$
+              * For subscripts: $a_1, a_2, a_3$
+              * For superscripts: $x^n$
+            - Always use proper LaTeX syntax for mathematical symbols: $\\pi$, $\\theta$, $\\sum$, $\\prod$, etc.
+            - For systems of equations or multi-line expressions, use proper LaTeX line breaks
+            - Always include LaTeX formatting even for simple expressions like $5 + 3 = 8$ or $x = 2$"""
             
             user_prompt = f"""Here is the problem context:
 
@@ -364,11 +377,13 @@ Recent Conversation History:
 
 User's Question: {user_question}
 
-IMPORTANT: Provide a BRIEF, DIRECT answer. Maximum 1-3 sentences. No introduction, no conclusion, just the answer."""
+IMPORTANT: 
+- Provide a BRIEF, DIRECT answer. Maximum 1-3 sentences. No introduction, no conclusion, just the answer.
+- Use LaTeX formatting for ALL mathematical expressions, formulas, and symbols."""
             
             # Call GPT-4o-mini
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 temperature=0.1,
                 messages=[
                     {"role": "system", "content": system_prompt},
