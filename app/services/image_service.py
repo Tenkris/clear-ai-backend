@@ -32,9 +32,12 @@ class ImageService:
                 temp.write(contents)
             
             # Encode the image as base64
+            # with open(temp_path, "rb") as image_file:
+            #     encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+
             with open(temp_path, "rb") as image_file:
-                encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
-            
+                encoded_image = image_file.read()
+
             # Remove temporary file after processing
             os.unlink(temp_path)
             

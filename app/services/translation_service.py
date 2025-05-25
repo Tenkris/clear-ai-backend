@@ -4,7 +4,8 @@ import logging
 from typing import Dict, Any
 from openai import OpenAI
 from fastapi import HTTPException
-
+from google import genai
+from google.genai import types
 logger = logging.getLogger(__name__)
 
 class TranslationService:
@@ -23,8 +24,10 @@ class TranslationService:
             )
             
         try:
-            self.client = OpenAI(api_key=api_key)
-            logger.info("OpenAI client initialized successfully for translation service")
+            # self.client = OpenAI(api_key=api_key)
+            # logger.info("OpenAI client initialized successfully for translation service")
+            self.client = genai.Client(api_key=api_key)
+            logger.info("Gemini model initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error initializing translation service: {str(e)}")
@@ -122,18 +125,37 @@ class TranslationService:
             Return ONLY valid JSON with Thai translations.
             """
             
-            # Send the request to OpenAI using GPT-4o
-            response = self.client.chat.completions.create(
-                model="gpt-4o",  # Using GPT-4o model
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                response_format={"type": "json_object"}
-            )
+            # # Send the request to OpenAI using GPT-4o
+            # response = self.client.chat.completions.create(
+            #     model="gpt-4o",  # Using GPT-4o model
+            #     messages=[
+            #         {"role": "system", "content": system_prompt},
+            #         {"role": "user", "content": user_prompt}
+            #     ],
+            #     response_format={"type": "json_object"}
+            # )
             
-            # Extract and parse the response
-            translated_json = json.loads(response.choices[0].message.content)
+            # # Extract and parse the response
+            # translated_json = json.loads(response.choices[0].message.content)
+
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[
+                    types.ModelContent(
+                        parts=[
+                            types.Part.from_text(text=system_prompt)
+                        ]
+                    ),
+                    types.UserContent(
+                        parts=[
+                            types.Part.from_text(text=user_prompt),  
+                        ]
+                    )
+                ]
+            )
+            print(response)
+            response_content = response.text.strip()
+            translated_json = json.loads(response_content.strip("`json\n"))
             return translated_json
             
         except Exception as e:

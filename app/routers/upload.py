@@ -95,6 +95,7 @@ async def upload_image(
         
         # Calculate processing time
         processing_time = time.time() - start_time
+        print(f"Processing time: {processing_time:.2f} seconds")
         logger.info(f"Request processed in {processing_time:.2f} seconds")
         
         # Step 6: Return only question_id and response_time

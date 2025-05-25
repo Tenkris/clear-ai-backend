@@ -4,7 +4,8 @@ import logging
 from typing import Dict, Any
 from openai import OpenAI
 from fastapi import HTTPException
-
+from google import genai
+from google.genai import types
 logger = logging.getLogger(__name__)
 
 class LLMService:
@@ -23,8 +24,10 @@ class LLMService:
             )
         
         try:
-            self.client = OpenAI(api_key=api_key)
-            logger.info("OpenAI client initialized successfully")
+            # self.client = OpenAI(api_key=api_key)
+            # logger.info("OpenAI client initialized successfully")
+            self.client = genai.Client(api_key=api_key)
+            logger.info("Gemini model initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing OpenAI client: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error initializing LLM service: {str(e)}")
@@ -97,29 +100,51 @@ class LLMService:
             Your response should be structured for clarity and ease of understanding, with careful attention to accuracy.
             """
             
-            # Send the request to the LLM with the image
-            response = self.client.chat.completions.create(
-                model="gpt-4o",  # Use GPT-4o which has vision capabilities
-                temperature=0.2,  # Lower temperature for more deterministic/accurate responses
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {
-                        "role": "user", 
-                        "content": [
-                            {"type": "text", "text": "Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English. Use LaTeX for all mathematical expressions."},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+            # # Send the request to the LLM with the image
+            # response = self.client.chat.completions.create(
+            #     # model="gpt-4o",  # Use GPT-4o which has vision capabilities
+            #     model = os.getenv("OPENAI_MODEL"),
+            #     temperature=0.2,  # Lower temperature for more deterministic/accurate responses
+            #     messages=[
+            #         {"role": "system", "content": system_message},
+            #         {
+            #             "role": "user", 
+            #             "content": [
+            #                 {"type": "text", "text": "Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English. Use LaTeX for all mathematical expressions."},
+            #                 {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
+            #             ]
+            #         }
+            #     ],
+            #     response_format={"type": "json_object"}
+            # )
+            
+            # # Extract the response content
+            # response_content = response.choices[0].message.content
+            response = self.client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[
+                    types.ModelContent(
+                        parts=[
+                            types.Part.from_text(text=system_message)
                         ]
-                    }
-                ],
-                response_format={"type": "json_object"}
+                    ),
+                    types.UserContent(
+                        parts=[
+                            types.Part.from_text(text='Analyze this Thai text image. Apply thorough reasoning and respond with the structured format in clear English. Use LaTeX for all mathematical expressions.'),
+                            types.Part.from_bytes(
+                                mime_type="image/jpeg",
+                                data=image_base64,
+                            )
+                        ]
+                    )
+                ]
             )
-            
             # Extract the response content
-            response_content = response.choices[0].message.content
-            
+            response_content = response.text.strip()
+            # print(response_content)
             # Parse the JSON response
-            parsed_response = json.loads(response_content)
-            
+            parsed_response = json.loads(response_content.strip("`json\n"))
+            # print(parsed_response)
             # Validate the response format
             self._validate_response_structure(parsed_response)
             
