@@ -3,9 +3,12 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pynamodb.exceptions import DoesNotExist, PynamoDBException
 from fastapi import HTTPException
+from openai import OpenAI
+import os
+import json
 
 from app.models.question import QuestionModel
-from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionResponse
+from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionResponse, StepExplanationResponse
 
 logger = logging.getLogger(__name__)
 
@@ -191,3 +194,103 @@ class QuestionService:
         except PynamoDBException as e:
             logger.error(f"Error appending conversation: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error appending conversation: {str(e)}")
+
+    @staticmethod
+    async def explain_solution_step(question_id: str, step_number: int) -> StepExplanationResponse:
+        """Explain a specific step in the solution using GPT-4o-mini.
+        
+        Args:
+            question_id: The question ID
+            step_number: The step number to explain (1-indexed)
+            
+        Returns:
+            StepExplanationResponse: Explanation of the step
+            
+        Raises:
+            HTTPException: If question not found, step invalid, or LLM error
+        """
+        try:
+            # Get the question
+            question = QuestionModel.get(question_id)
+            
+            # Validate step number
+            if step_number < 1 or step_number > len(question.solution_steps):
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid step number. Question has {len(question.solution_steps)} steps."
+                )
+            
+            # Get the specific step content (0-indexed)
+            step_content = question.solution_steps[step_number - 1]
+            
+            # Initialize OpenAI client
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+            
+            client = OpenAI(api_key=api_key)
+            
+            # Create prompt for GPT-4o-mini
+            system_prompt = """You are an expert educator who explains mathematical and logical solution steps.
+            Given a specific step from a solution, provide clear and concise explanations.
+            
+            You must respond in valid JSON format with exactly these two keys:
+            {
+                "why_this_way": "explanation of why we need to solve it this way",
+                "key_concepts": "explanation of the key concepts in this solution process"
+            }
+            
+            Keep your explanations educational, clear, and focused on helping students understand the reasoning."""
+            
+            user_prompt = f"""Here is the context of the problem:
+Question Understanding: {question.question_understanding}
+Solving Strategy: {question.solving_strategy}
+
+The specific step to explain is:
+{step_content}
+
+This is step {step_number} out of {len(question.solution_steps)} total steps.
+
+Please provide a JSON response with:
+1. "why_this_way": A clear explanation of WHY we need to solve it this way (focus on the reasoning and necessity)
+2. "key_concepts": The KEY CONCEPTS involved in this step (mathematical principles, techniques, or important ideas)
+
+Keep explanations concise but comprehensive."""
+            
+            # Call GPT-4o-mini
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+            
+            # Parse the response
+            llm_response = response.choices[0].message.content
+            
+            try:
+                # Parse JSON response
+                parsed_response = json.loads(llm_response)
+                why_this_way = parsed_response.get("why_this_way", "")
+                key_concepts = parsed_response.get("key_concepts", "")
+            except json.JSONDecodeError:
+                # Fallback parsing if JSON fails
+                lines = llm_response.strip().split('\n\n')
+                why_this_way = lines[0] if len(lines) > 0 else "This approach is necessary for solving the problem systematically."
+                key_concepts = lines[1] if len(lines) > 1 else "Key concepts include the mathematical and logical principles applied in this step."
+            
+            return StepExplanationResponse(
+                step=step_number,
+                step_content=step_content,
+                why_this_way=why_this_way,
+                key_concepts=key_concepts
+            )
+            
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Question {question_id} not found")
+        except Exception as e:
+            logger.error(f"Error explaining step: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error explaining step: {str(e)}")

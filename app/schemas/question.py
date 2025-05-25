@@ -78,3 +78,29 @@ class ConversationAppend(BaseModel):
                 "message": "User: Can you explain this step in more detail?"
             }
         }
+
+class StepExplanationRequest(BaseModel):
+    step: int
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "step": 1
+            }
+        }
+
+class StepExplanationResponse(BaseModel):
+    step: int
+    step_content: str
+    why_this_way: str
+    key_concepts: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "step": 1,
+                "step_content": "Step 1: Identify the given values and what we need to find",
+                "why_this_way": "We need to solve it this way because identifying given information is crucial for understanding the problem structure and determining which mathematical principles to apply.",
+                "key_concepts": "The key concepts in this step include: problem decomposition, variable identification, and establishing relationships between known and unknown values."
+            }
+        }

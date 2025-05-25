@@ -7,7 +7,9 @@ from app.schemas.question import (
     QuestionCreate, 
     QuestionUpdate, 
     QuestionResponse,
-    ConversationAppend
+    ConversationAppend,
+    StepExplanationRequest,
+    StepExplanationResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -93,3 +95,26 @@ async def append_conversation(
         QuestionResponse: The updated question with new conversation
     """
     return await QuestionService.append_conversation(question_id, conversation.message)
+
+@router.post("/{question_id}/explain-step", response_model=StepExplanationResponse)
+async def explain_solution_step(
+    question_id: str,
+    request: StepExplanationRequest
+) -> StepExplanationResponse:
+    """Explain a specific step in the solution.
+    
+    This endpoint provides two key explanations for a solution step:
+    1. Why we need to solve it this way
+    2. What are the key concepts in the solution process
+    
+    Args:
+        question_id: The question ID
+        request: Contains the step number to explain (1-indexed)
+        
+    Returns:
+        StepExplanationResponse: Detailed explanation of the step
+        
+    Raises:
+        HTTPException: If question not found or step number is invalid
+    """
+    return await QuestionService.explain_solution_step(question_id, request.step)
