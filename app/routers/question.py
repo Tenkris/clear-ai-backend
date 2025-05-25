@@ -8,7 +8,6 @@ from app.schemas.question import (
     QuestionUpdate, 
     QuestionResponse,
     ConversationAppend,
-    StepExplanationRequest,
     StepExplanationResponse,
     AskQuestionRequest,
     AskQuestionResponse
@@ -98,10 +97,10 @@ async def append_conversation(
     """
     return await QuestionService.append_conversation(question_id, conversation.message)
 
-@router.post("/{question_id}/explain-step", response_model=StepExplanationResponse)
+@router.post("/{question_id}/explain-step/{step}", response_model=StepExplanationResponse)
 async def explain_solution_step(
     question_id: str,
-    request: StepExplanationRequest
+    step: int
 ) -> StepExplanationResponse:
     """Explain a specific step in the solution.
     
@@ -111,7 +110,7 @@ async def explain_solution_step(
     
     Args:
         question_id: The question ID
-        request: Contains the step number to explain (1-indexed)
+        step: The step number to explain (1-indexed)
         
     Returns:
         StepExplanationResponse: Detailed explanation of the step
@@ -119,7 +118,7 @@ async def explain_solution_step(
     Raises:
         HTTPException: If question not found or step number is invalid
     """
-    return await QuestionService.explain_solution_step(question_id, request.step)
+    return await QuestionService.explain_solution_step(question_id, step)
 
 @router.post("/{question_id}/ask", response_model=AskQuestionResponse)
 async def ask_about_question(

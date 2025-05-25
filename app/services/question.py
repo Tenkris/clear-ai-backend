@@ -230,7 +230,7 @@ class QuestionService:
             
             client = OpenAI(api_key=api_key)
             
-            # Create prompt for GPT-4o-mini
+            # Create prompt for GPT-4o-mini with LaTeX formatting
             system_prompt = """You are an expert educator who explains mathematical and logical solution steps.
             Given a specific step from a solution, provide clear and concise explanations.
             
@@ -239,6 +239,19 @@ class QuestionService:
                 "why_this_way": "explanation of why we need to solve it this way",
                 "key_concepts": "explanation of the key concepts in this solution process"
             }
+            
+            MATHEMATICAL EXPRESSION FORMATTING:
+            - For ALL mathematical expressions, equations, formulas, and symbols, use LaTeX syntax enclosed in dollar signs
+            - Examples:
+              * For inline expressions: $x^2 + 3x - 2 = 0$
+              * For fractions: $\\frac{a}{b}$
+              * For integrals: $\\int_{a}^{b} f(x) dx$
+              * For square roots: $\\sqrt{x}$
+              * For subscripts: $a_1, a_2, a_3$
+              * For superscripts: $x^n$
+            - Always use proper LaTeX syntax for mathematical symbols: $\\pi$, $\\theta$, $\\sum$, $\\prod$, etc.
+            - For systems of equations or multi-line expressions, use proper LaTeX line breaks
+            - Always include LaTeX formatting even for simple expressions like $5 + 3 = 8$ or $x = 2$
             
             Keep your explanations educational, clear, and focused on helping students understand the reasoning."""
             
@@ -255,11 +268,12 @@ Please provide a JSON response with:
 1. "why_this_way": A clear explanation of WHY we need to solve it this way (focus on the reasoning and necessity)
 2. "key_concepts": The KEY CONCEPTS involved in this step (mathematical principles, techniques, or important ideas)
 
+IMPORTANT: Use LaTeX formatting for ALL mathematical expressions, formulas, and symbols.
 Keep explanations concise but comprehensive."""
             
             # Call GPT-4o-mini
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 temperature=0.1,
                 messages=[
                     {"role": "system", "content": system_prompt},
