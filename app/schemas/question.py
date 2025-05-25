@@ -104,3 +104,25 @@ class StepExplanationResponse(BaseModel):
                 "key_concepts": "The key concepts in this step include: problem decomposition, variable identification, and establishing relationships between known and unknown values."
             }
         }
+
+class AskQuestionRequest(BaseModel):
+    question: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "question": "Can you explain why we use this formula in step 2?"
+            }
+        }
+
+class AskQuestionResponse(BaseModel):
+    user_message: str
+    ai_response: str
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_message": "Can you explain why we use this formula in step 2?",
+                "ai_response": "In step 2, we use this formula because it directly relates the given variables..."
+            }
+        }

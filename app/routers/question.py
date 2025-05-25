@@ -9,7 +9,9 @@ from app.schemas.question import (
     QuestionResponse,
     ConversationAppend,
     StepExplanationRequest,
-    StepExplanationResponse
+    StepExplanationResponse,
+    AskQuestionRequest,
+    AskQuestionResponse
 )
 
 logger = logging.getLogger(__name__)
@@ -118,3 +120,26 @@ async def explain_solution_step(
         HTTPException: If question not found or step number is invalid
     """
     return await QuestionService.explain_solution_step(question_id, request.step)
+
+@router.post("/{question_id}/ask", response_model=AskQuestionResponse)
+async def ask_about_question(
+    question_id: str,
+    request: AskQuestionRequest
+) -> AskQuestionResponse:
+    """Ask a question about the solution and get an AI response.
+    
+    This endpoint allows users to ask questions about the solution,
+    and automatically saves both the user's question and AI's response
+    to the conversation history with proper tags.
+    
+    Args:
+        question_id: The question ID
+        request: Contains the user's question
+        
+    Returns:
+        AskQuestionResponse: Contains both the user's message and AI's response
+        
+    Raises:
+        HTTPException: If question not found or AI service fails
+    """
+    return await QuestionService.ask_about_question(question_id, request.question)

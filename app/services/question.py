@@ -8,7 +8,7 @@ import os
 import json
 
 from app.models.question import QuestionModel
-from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionResponse, StepExplanationResponse
+from app.schemas.question import QuestionCreate, QuestionUpdate, QuestionResponse, StepExplanationResponse, AskQuestionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +260,7 @@ Keep explanations concise but comprehensive."""
             # Call GPT-4o-mini
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                temperature=0.3,
+                temperature=0.1,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
@@ -294,3 +294,102 @@ Keep explanations concise but comprehensive."""
         except Exception as e:
             logger.error(f"Error explaining step: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error explaining step: {str(e)}")
+
+    @staticmethod
+    async def ask_about_question(question_id: str, user_question: str) -> AskQuestionResponse:
+        """Handle user questions about the solution and get AI responses.
+        
+        Args:
+            question_id: The question ID
+            user_question: The user's question about the solution
+            
+        Returns:
+            AskQuestionResponse: Contains the user message and AI response
+            
+        Raises:
+            HTTPException: If question not found or AI service fails
+        """
+        try:
+            # Get the question
+            question = QuestionModel.get(question_id)
+            
+            # Initialize OpenAI client
+            api_key = os.getenv("OPENAI_API_KEY")
+            if not api_key:
+                raise HTTPException(status_code=500, detail="OpenAI API key not configured")
+            
+            client = OpenAI(api_key=api_key)
+            
+            # Build context from existing conversation
+            conversation_context = ""
+            if question.conversations:
+                conversation_context = "\n".join(question.conversations[-10:])  # Last 10 messages for context
+            
+            # Create prompt for GPT-4o-mini
+            system_prompt = """You are a concise educational assistant that answers questions about mathematical problem solutions.
+            
+            IMPORTANT RULES:
+            - Be EXTREMELY CONCISE and STRAIGHT TO THE POINT
+            - Answer in 1-3 sentences maximum unless complexity requires more
+            - NO unnecessary elaboration or filler content
+            - Focus only on what directly answers the user's question
+            - Use simple, clear language
+            - Get to the point immediately"""
+            
+            user_prompt = f"""Here is the problem context:
+
+Question Understanding: {question.question_understanding}
+
+Solving Strategy: {question.solving_strategy}
+
+Solution Steps:
+{chr(10).join([f"{i+1}. {step}" for i, step in enumerate(question.solution_steps)])}
+
+Recent Conversation History:
+{conversation_context if conversation_context else "No previous conversation"}
+
+User's Question: {user_question}
+
+IMPORTANT: Provide a BRIEF, DIRECT answer. Maximum 1-3 sentences. No introduction, no conclusion, just the answer."""
+            
+            # Call GPT-4o-mini
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                temperature=0.1,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=150
+            )
+            
+            # Get AI response
+            ai_response = response.choices[0].message.content.strip()
+            
+            # Format messages with proper tags
+            user_message_tagged = f"User: {user_question}"
+            ai_message_tagged = f"Assistant: {ai_response}"
+            
+            # Append both messages to conversation history
+            if not question.conversations:
+                question.conversations = []
+            
+            question.conversations.append(user_message_tagged)
+            question.conversations.append(ai_message_tagged)
+            
+            # Update timestamp and save
+            question.updated_at = datetime.now(timezone.utc)
+            question.save()
+            
+            logger.info(f"Added Q&A to conversation for question: {question_id}")
+            
+            return AskQuestionResponse(
+                user_message=user_question,
+                ai_response=ai_response
+            )
+            
+        except DoesNotExist:
+            raise HTTPException(status_code=404, detail=f"Question {question_id} not found")
+        except Exception as e:
+            logger.error(f"Error processing question: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
