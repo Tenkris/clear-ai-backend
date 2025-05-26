@@ -5,6 +5,8 @@ from typing import Dict, Any
 from fastapi import HTTPException
 from google import genai
 from google.genai import types
+import re
+
 logger = logging.getLogger(__name__)
 
 class LLMService:
@@ -113,16 +115,20 @@ class LLMService:
                     )
                 ]
             )
-            # Extract the response content
+            # Step 1: Get raw response
             response_content = response.text.strip()
-            # Parse the JSON response
-            parsed_response = json.loads(response_content.strip("`json\n"))
-            # Validate the response format
-            self._validate_response_structure(parsed_response)
-            
-            # Return the parsed response directly
+  
+            # Step 2: Use regex to extract JSON block between the first { and last }
+            match = re.search(r'{.*}', response_content, re.DOTALL)
+            if not match:
+                raise ValueError("No valid JSON object found in model response")
+
+            json_string = match.group(0)
+
+            parsed_response = json.loads(json_string.replace('\\', '\\\\'),strict=False)
+
             return parsed_response
-            
+        
         except Exception as e:
             logger.error(f"Error processing image with LLM: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error processing image with LLM: {str(e)}")
