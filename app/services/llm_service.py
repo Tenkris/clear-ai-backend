@@ -2,7 +2,6 @@ import os
 import json
 import logging
 from typing import Dict, Any
-from openai import OpenAI
 from fastapi import HTTPException
 from google import genai
 from google.genai import types
@@ -13,23 +12,21 @@ class LLMService:
     
     def __init__(self):
         # Get API key from environment
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY")
         
         # Check if API key is available
         if not api_key:
-            logger.error("OPENAI_API_KEY environment variable is not set")
+            logger.error("GEMINI_API_KEY environment variable is not set")
             raise HTTPException(
-                status_code=500, 
-                detail="OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
+                status_code=500,
+                detail="Gemini API key not found. Please set the GEMINI_API_KEY environment variable."
             )
         
         try:
-            # self.client = OpenAI(api_key=api_key)
-            # logger.info("OpenAI client initialized successfully")
             self.client = genai.Client(api_key=api_key)
             logger.info("Gemini model initialized successfully")
         except Exception as e:
-            logger.error(f"Error initializing OpenAI client: {str(e)}")
+            logger.error(f"Error initializing Gemini client: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error initializing LLM service: {str(e)}")
     
     async def process_thai_image(self, image_base64: str, language: str) -> Dict[str, Any]:
