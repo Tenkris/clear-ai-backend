@@ -66,20 +66,8 @@ async def upload_image(
         
         # Step 3: Process image with LLM to get English analysis
         logger.info("Processing image with LLM")
-        english_result = await llm_service.process_thai_image(base64_image)
+        processed_data = await llm_service.process_thai_image(base64_image, language.lower())
         logger.info("LLM processing complete")
-        
-        # Step 4: Either use English result or translate to Thai based on language parameter
-        if language.lower() == "english":
-            logger.info("Using English result")
-            processed_data = english_result
-        else:
-            # Translate to Thai
-            logger.info("Translating analysis to Thai")
-            thai_result = await translation_service.translate_to_thai(english_result)
-            logger.info("Translation complete")
-            # Extract the data from the thai_result
-            processed_data = thai_result["data"]
         
         # Step 5: Create question in database
         logger.info("Creating question in database")
@@ -95,6 +83,7 @@ async def upload_image(
         
         # Calculate processing time
         processing_time = time.time() - start_time
+        print(f"Processing time: {processing_time:.2f} seconds")
         logger.info(f"Request processed in {processing_time:.2f} seconds")
         
         # Step 6: Return only question_id and response_time
