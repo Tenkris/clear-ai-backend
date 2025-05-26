@@ -93,7 +93,7 @@ class LLMService:
                 r"- For systems of equations or multi-line expressions, use proper LaTeX line breaks\n"
                 r"- Always include LaTeX formatting even for simple expressions like $5 + 3 = 8$ or $x = 2$\n"
                 "\n"
-                f"Your response should be structured for clarity concise {language} and ease of understanding, with careful attention to accuracy.\n"
+                f"Your response should be structured for clarity, concise {language} with no foreign words, and ease of understanding, with careful attention to accuracy.\n"
             )   
             
             response = self.client.models.generate_content(
